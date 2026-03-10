@@ -1,16 +1,13 @@
 {
-  "name": "Developer Tool Extension",
-  "description": "Developer Tool Extension",
+  "name": "AK Tools Extension",
+  "description": "A chrome extension contains some useful developer tools",
   "version": "0.0.1",
   "manifest_version": 3,
   "action": {
-    "default_title": "Click to open panel",
-    "default_icon": "translate_extension.png"
+    "default_title": "Click to open tools"
   },
   "permissions": [
-    "storage",
-    "sidePanel",
-    "declarativeNetRequest"
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -26,7 +23,10 @@
       "run_at": "document_end"
     }
   ],
-  "side_panel": {
-    "default_path": "sidepanel.html"
+  "icons": {
+    "16": "images/icon16.png",
+    "32": "images/icon32.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
   }
 }

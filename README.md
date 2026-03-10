@@ -1,3 +1,3 @@
-# developer tool chrome extension
+# ak-tools chrome extension
 
-A chrome extension contains some developer tools
+A chrome extension contains some useful developer tools
