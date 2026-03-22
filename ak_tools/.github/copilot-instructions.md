@@ -1,20 +1,6 @@
 # AK Tools — Chrome 扩展开发指引
 
-这是一个基于 **Vue 3 + Vite + TypeScript + Element Plus** 的 Chrome 扩展前端工程，核心功能方向为**开发类小工具集**。
-
-## 技术栈
-
-| 类别      | 技术                                                         |
-| --------- | ------------------------------------------------------------ |
-| 框架      | Vue 3.5（Composition API + `<script setup>`）                |
-| 路由      | Vue Router 5                                                 |
-| 状态管理  | Pinia（Setup Store 函数式风格）                              |
-| 国际化    | vue-i18n 11，默认 `zh-CN`，回退 `en-US`                      |
-| UI 组件库 | Element Plus 2（自动按需导入）                               |
-| 工具函数  | VueUse                                                       |
-| 样式      | UnoCSS（原子化）+ SCSS（`@/assets/variables.scss` 全局注入） |
-| 构建工具  | Vite 7，**`base: './'`（Chrome 扩展必须保留此配置）**        |
-| Node 版本 | `>=20.19` 或 `>=22.12`                                       |
+基于 **Vue 3 + Vite + TypeScript + Element Plus** 的 Chrome 扩展，核心是**开发者小工具集**（JSON 格式化、日期转换、代码格式化等）。
 
 ## 构建 & 测试命令
 
@@ -28,82 +14,84 @@ npm run lint         # oxlint --fix，再 eslint --fix
 npm run format       # Prettier 格式化 src/
 ```
 
+## 架构说明
+
+```
+src/
+├── views/          # 页面 —— 每个工具一个 .vue 文件，按类别分子目录
+│   └── json/       # 例：JsonFormatTool.vue
+├── components/     # 共享组件（AppHeader、AppSidebar、SettingsDrawer 等）
+├── layouts/        # AdminLayout.vue —— 全局框架（Header + Sidebar + ScrollArea）
+├── stores/         # Pinia stores（settings.ts、tools.ts）
+├── router/         # router/index.ts —— 所有路由集中定义
+├── hooks/          # 可复用组合式函数（useXxx.ts）
+├── i18n/           # i18n 初始化
+├── locales/        # zh-CN.ts、en-US.ts
+└── assets/         # 静态资源、variables.scss（全局 SCSS 变量，无需手动 @import）
+```
+
+## 添加新工具（必须同时修改 5 处）
+
+**无任何自动发现机制**——每项都要手动维护：
+
+1. **`stores/tools.ts`** — 在 `TOOL_LIST` 末尾追加工具元数据：
+
+   ```ts
+   { key: 'jsonDiff', path: '/json/diff', nameKey: 'tool.jsonDiff.name',
+     descKey: 'tool.jsonDiff.desc', icon: 'DocumentCopy',
+     category: 'json', categoryKey: 'nav.json' }
+   ```
+
+2. **`router/index.ts`** — 在 `AdminLayout` 的 `children` 追加路由，`meta` 必须包含：
+
+   ```ts
+   meta: { title: '...', toolKey: 'jsonDiff',
+           breadcrumb: '...', parentBreadcrumbs: [{ title: '...', path: null }] }
+   ```
+
+3. **`components/AppSidebar.vue`** — 在对应分组的 `children` 数组中追加菜单项。
+
+4. **`locales/zh-CN.ts` + `en-US.ts`** — 同步新增 `nav.jsonDiff` 和 `tool.jsonDiff.{name, desc}`。
+
+5. **`views/json/JsonDiffTool.vue`** — 创建工具视图，必须在 `onMounted` 中调用：
+   ```ts
+   toolsStore.recordUsage(route.meta.toolKey as string)
+   ```
+
 ## 代码规范
 
 ### 组件写法
 
-所有 `.vue` 文件统一使用 `<script setup lang="ts">`，禁止 Options API：
+所有 `.vue` 文件统一使用 `<script setup lang="ts">`，禁止 Options API。
 
-```vue
-<script setup lang="ts">
-// 组合式 API，无需手动 import Vue/Router/Pinia 核心 API（auto-import 已配置）
-</script>
+### 自动导入（无需手动 import）
 
-<template>...</template>
-
-<style scoped></style>
-```
-
-### 自动导入
-
-以下 API **无需手动 import**，由 `unplugin-auto-import` 自动注入：
-
-- Vue 核心：`ref`、`computed`、`watch`、`onMounted` 等
+- Vue 核心 API：`ref`、`computed`、`watch`、`onMounted` 等
 - Vue Router：`useRouter`、`useRoute`
 - Pinia：`defineStore`、`storeToRefs`
-
-Element Plus 组件也无需手动注册，由 `unplugin-vue-components` 自动按需导入。
+- Element Plus 组件（`unplugin-vue-components` 自动注册）
 
 ### 路径别名
 
-始终使用 `@/` 代替相对路径访问 `src/` 下的模块：
-
-```ts
-import { useCounterStore } from '@/stores/counter'
-```
+始终使用 `@/` 访问 `src/` 下的模块。
 
 ### 样式约定
 
 - 优先使用 **UnoCSS 原子类**处理工具性样式
 - 组件私有样式写在 `<style scoped>` 块内
-- 共享 SCSS 变量和 mixins 放在 `@/assets/variables.scss`（通过 Vite 全局注入，无需 import）
+- `@/assets/variables.scss` 通过 Vite 全局注入，无需手动 import
 
 ### 国际化
 
-- 所有用户可见的文案必须走 i18n，不得硬编码中文或英文字符串
-- 翻译 key 采用嵌套结构，例如 `setting.title`
-- 在 `src/locales/zh-CN.ts` 和 `src/locales/en-US.ts` 中同步维护译文
-
-### Pinia Store
-
-使用 Setup Store（函数式），返回需要暴露的响应式数据和方法：
-
-```ts
-export const useXxxStore = defineStore('xxx', () => {
-  const state = ref(...)
-  function action() { ... }
-  return { state, action }
-})
-```
-
-## 架构说明
-
-```
-src/
-├── components/   # 纯展示或复用组件
-├── hooks/        # 可复用的组合式函数（useXxx.ts）
-├── stores/       # Pinia stores
-├── router/       # 路由配置（createWebHistory + BASE_URL）
-├── i18n/         # i18n 初始化
-├── locales/      # 翻译词条
-└── assets/       # 静态资源、全局 SCSS 变量
-```
+- 所有用户可见文案必须走 i18n，不得硬编码中文或英文字符串
+- 翻译 key 嵌套结构，工具文案格式：`tool.{toolKey}.name` / `tool.{toolKey}.desc`
+- `zh-CN.ts` 与 `en-US.ts` 必须同步维护
 
 ## Chrome 扩展注意事项
 
-- `vite.config.ts` 中 `base: './'` **不得修改**，Chrome 扩展以本地文件协议加载资源，必须使用相对路径
-- `public/manifest.json` 遵循 **Manifest V3** 规范
-- 如需多入口（popup / options / content script / background），在 `vite.config.ts` 中配置 `build.rollupOptions.input`
+- `vite.config.ts` 中 `base: './'` **不得修改**（Chrome 扩展以本地文件协议加载资源）
+- 路由使用 `createMemoryHistory`（非 `createWebHistory`）——扩展没有 URL 地址栏
+- 暂无 `manifest.json`；如需多入口（popup/options/content script/background），在 `vite.config.ts` 的 `build.rollupOptions.input` 中配置
 - Content Script 与页面 DOM 交互，不可使用 `chrome.storage` 以外的跨域 API
 
 ## Lint & 格式化

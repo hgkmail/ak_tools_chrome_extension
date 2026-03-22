@@ -2,6 +2,7 @@ import { createRouter, createMemoryHistory } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import HomePage from '@/views/HomePage.vue'
 import ToolPlaceholder from '@/views/ToolPlaceholder.vue'
+import JsonFormatTool from '@/views/json/JsonFormatTool.vue'
 
 const router = createRouter({
   history: createMemoryHistory(import.meta.env.BASE_URL),
@@ -20,7 +21,7 @@ const router = createRouter({
         {
           path: 'json/format',
           name: 'jsonFormat',
-          component: ToolPlaceholder,
+          component: JsonFormatTool,
           meta: {
             title: 'JSON 格式化',
             toolKey: 'jsonFormat',
