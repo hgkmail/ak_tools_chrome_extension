@@ -2,19 +2,42 @@
 import { Codemirror } from 'vue-codemirror'
 import { json } from '@codemirror/lang-json'
 import { java } from '@codemirror/lang-java'
+import { javascript } from '@codemirror/lang-javascript'
+import { yaml } from '@codemirror/lang-yaml'
+import { StreamLanguage } from '@codemirror/language'
+import { go as goMode } from '@codemirror/legacy-modes/mode/go'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { useI18n } from 'vue-i18n'
 import { useToolsStore } from '@/stores/tools'
 import { useSettingsStore } from '@/stores/settings'
 import { useClipboard } from '@/hooks/useClipboard'
 import { useJavaEntityGenerator } from '@/hooks/useJavaEntityGenerator'
+import { useGoEntityGenerator } from '@/hooks/useGoEntityGenerator'
+import { useTsEntityGenerator } from '@/hooks/useTsEntityGenerator'
+import { useYamlGenerator } from '@/hooks/useYamlGenerator'
 
 const { t } = useI18n()
 const route = useRoute()
 const toolsStore = useToolsStore()
 const settingsStore = useSettingsStore()
 const { copyText } = useClipboard()
-const { className, packageName, javaCode, jsonError, generateJavaBean } = useJavaEntityGenerator()
+
+const {
+  className: javaClassName,
+  packageName: javaPackageName,
+  javaCode,
+  jsonError: javaError,
+  generateJavaBean,
+} = useJavaEntityGenerator()
+const {
+  structName,
+  packageName: goPackageName,
+  goCode,
+  goError,
+  generateGoStruct,
+} = useGoEntityGenerator()
+const { interfaceName, tsCode, tsError, generateTsInterface } = useTsEntityGenerator()
+const { yamlCode, yamlError, generateYaml } = useYamlGenerator()
 
 const SAMPLE_JSON = `{
   "id": 1,
@@ -35,12 +58,56 @@ const leftWidth = ref(50)
 const containerRef = ref<HTMLDivElement | null>(null)
 
 const jsonExtensions = computed(() => [json(), ...(settingsStore.isDark ? [oneDark] : [])])
-const javaExtensions = computed(() => [java(), ...(settingsStore.isDark ? [oneDark] : [])])
+
+const activeCode = computed(() => {
+  switch (selectedLang.value) {
+    case 'java': return javaCode.value
+    case 'go': return goCode.value
+    case 'ts': return tsCode.value
+    case 'yaml': return yamlCode.value
+    default: return ''
+  }
+})
+
+const activeError = computed(() => {
+  switch (selectedLang.value) {
+    case 'java': return javaError.value
+    case 'go': return goError.value
+    case 'ts': return tsError.value
+    case 'yaml': return yamlError.value
+    default: return ''
+  }
+})
+
+const outputExtensions = computed(() => {
+  let langExt
+  switch (selectedLang.value) {
+    case 'java': langExt = java(); break
+    case 'go': langExt = StreamLanguage.define(goMode); break
+    case 'ts': langExt = javascript({ typescript: true }); break
+    case 'yaml': langExt = yaml(); break
+    default: langExt = java()
+  }
+  return [langExt, ...(settingsStore.isDark ? [oneDark] : [])]
+})
+
+function generate() {
+  switch (selectedLang.value) {
+    case 'java': generateJavaBean(jsonText.value); break
+    case 'go': generateGoStruct(jsonText.value); break
+    case 'ts': generateTsInterface(jsonText.value); break
+    case 'yaml': generateYaml(jsonText.value); break
+  }
+}
+
+watch(selectedLang, () => {
+  if (jsonText.value.trim()) generate()
+})
 
 // ── Copy handler ───────────────────────────────────────────────────────────
 function clickCopy() {
-  if (!javaCode.value) return
-  copyText(javaCode.value)
+  if (!activeCode.value) return
+  copyText(activeCode.value)
   ElNotification({
     title: t('common.btnCopy'),
     message: t('common.copySuccess'),
@@ -78,7 +145,7 @@ onMounted(() => {
   const toolKey = route.meta?.toolKey as string | undefined
   if (toolKey) toolsStore.recordUsage(toolKey)
   // Auto-generate on load so the right panel shows something immediately
-  generateJavaBean(jsonText.value)
+  generate()
 })
 </script>
 
@@ -88,16 +155,40 @@ onMounted(() => {
       <!-- ── Left panel: JSON input ── -->
       <div class="left-panel" :style="{ width: leftWidth + '%' }">
         <div class="panel-toolbar">
-          <el-input v-model="className" size="small" style="width: 180px"
-            :placeholder="t('tool.jsonEntity.placeholderClass')">
-            <template #prepend>{{ t('tool.jsonEntity.labelClassName') }}</template>
-          </el-input>
-          <el-input v-model="packageName" size="small" style="width: 200px"
-            :placeholder="t('tool.jsonEntity.placeholderPackage')">
-            <template #prepend>{{ t('tool.jsonEntity.labelPackageName') }}</template>
-          </el-input>
-          <el-divider direction="vertical" />
-          <el-button size="small" type="primary" @click="generateJavaBean(jsonText)">
+          <!-- Java inputs -->
+          <template v-if="selectedLang === 'java'">
+            <el-input v-model="javaClassName" size="small" style="width: 180px"
+              :placeholder="t('tool.jsonEntity.placeholderClass')">
+              <template #prepend>{{ t('tool.jsonEntity.labelClassName') }}</template>
+            </el-input>
+            <el-input v-model="javaPackageName" size="small" style="width: 200px"
+              :placeholder="t('tool.jsonEntity.placeholderPackage')">
+              <template #prepend>{{ t('tool.jsonEntity.labelPackageName') }}</template>
+            </el-input>
+            <el-divider direction="vertical" />
+          </template>
+          <!-- Go inputs -->
+          <template v-else-if="selectedLang === 'go'">
+            <el-input v-model="structName" size="small" style="width: 180px"
+              :placeholder="t('tool.jsonEntity.placeholderStruct')">
+              <template #prepend>{{ t('tool.jsonEntity.labelStructName') }}</template>
+            </el-input>
+            <el-input v-model="goPackageName" size="small" style="width: 200px"
+              :placeholder="t('tool.jsonEntity.placeholderGoPackage')">
+              <template #prepend>{{ t('tool.jsonEntity.labelPackageName') }}</template>
+            </el-input>
+            <el-divider direction="vertical" />
+          </template>
+          <!-- TypeScript input -->
+          <template v-else-if="selectedLang === 'ts'">
+            <el-input v-model="interfaceName" size="small" style="width: 200px"
+              :placeholder="t('tool.jsonEntity.placeholderInterface')">
+              <template #prepend>{{ t('tool.jsonEntity.labelInterfaceName') }}</template>
+            </el-input>
+            <el-divider direction="vertical" />
+          </template>
+          <!-- YAML: no config inputs -->
+          <el-button size="small" type="primary" @click="generate">
             {{ t('tool.jsonEntity.btnGenerate') }}
           </el-button>
         </div>
@@ -114,19 +205,22 @@ onMounted(() => {
       <div class="right-panel">
         <div class="panel-toolbar">
           <span class="toolbar-label">{{ t('tool.jsonEntity.labelLanguage') }}</span>
-          <el-select v-model="selectedLang" size="small" style="width: 100px">
+          <el-select v-model="selectedLang" size="small" style="width: 120px">
             <el-option value="java" :label="t('tool.jsonEntity.langJava')" />
+            <el-option value="go" :label="t('tool.jsonEntity.langGo')" />
+            <el-option value="ts" :label="t('tool.jsonEntity.langTs')" />
+            <el-option value="yaml" :label="t('tool.jsonEntity.langYaml')" />
           </el-select>
           <el-divider direction="vertical" />
-          <el-button size="small" plain type="success" :disabled="!javaCode" @click="clickCopy">
+          <el-button size="small" plain type="success" :disabled="!activeCode" @click="clickCopy">
             {{ t('common.btnCopy') }}
           </el-button>
         </div>
         <div class="editor-wrapper">
-          <div v-if="jsonError" class="error-bar">
-            {{ jsonError }}
+          <div v-if="activeError" class="error-bar">
+            {{ activeError }}
           </div>
-          <Codemirror v-else v-model="javaCode" :extensions="javaExtensions" :disabled="true"
+          <Codemirror v-else :model-value="activeCode" :extensions="outputExtensions" :disabled="true"
             style="flex: 1; min-height: 0; overflow: hidden" />
         </div>
       </div>
