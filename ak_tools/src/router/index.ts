@@ -3,6 +3,7 @@ import AdminLayout from '@/layouts/AdminLayout.vue'
 import HomePage from '@/views/HomePage.vue'
 import ToolPlaceholder from '@/views/ToolPlaceholder.vue'
 import JsonFormatTool from '@/views/json/JsonFormatTool.vue'
+import JsonEscapeTool from '@/views/json/JsonEscapeTool.vue'
 
 const router = createRouter({
   history: createMemoryHistory(import.meta.env.BASE_URL),
@@ -32,7 +33,7 @@ const router = createRouter({
         {
           path: 'json/escape',
           name: 'jsonEscape',
-          component: ToolPlaceholder,
+          component: JsonEscapeTool,
           meta: {
             title: 'JSON 转义',
             toolKey: 'jsonEscape',

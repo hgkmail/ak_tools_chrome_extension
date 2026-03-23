@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { Grid, User } from '@element-plus/icons-vue'
+const router = useRouter()
 
 const { t } = useI18n()
+
+/**
+ * 路由到首页
+ */
+function goHome() {
+  router.push('/')
+}
 </script>
 
 <template>
   <el-header class="app-header">
-    <div class="header-left">
+    <div class="header-left cursor-pointer" @click="goHome">
       <el-icon class="app-icon" :size="28">
         <Grid />
       </el-icon>
