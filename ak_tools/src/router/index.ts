@@ -5,6 +5,7 @@ import ToolPlaceholder from '@/views/ToolPlaceholder.vue'
 import JsonFormatTool from '@/views/json/JsonFormatTool.vue'
 import JsonEscapeTool from '@/views/json/JsonEscapeTool.vue'
 import JsonToEntityTool from '@/views/json/JsonToEntityTool.vue'
+import UnixTimestampTool from '@/views/date/UnixTimestampTool.vue'
 
 const router = createRouter({
   history: createMemoryHistory(import.meta.env.BASE_URL),
@@ -57,7 +58,7 @@ const router = createRouter({
         {
           path: 'date/timestamp',
           name: 'dateTimestamp',
-          component: ToolPlaceholder,
+          component: UnixTimestampTool,
           meta: {
             title: 'Unix 时间戳',
             toolKey: 'dateTimestamp',
