@@ -39,6 +39,15 @@ const extensions = computed(() => [json(), ...(settingsStore.isDark ? [oneDark] 
 // ── Editor → Tree sync (debounced 300 ms) ──────────────────────────────────
 const debouncedSyncToTree = useDebounceFn((text: string) => {
   if (syncLock.value === 'tree') return
+  if (text.trim() === '') {
+    jsonError.value = ''
+    syncLock.value = 'editor'
+    jsonValue.value = null
+    nextTick(() => {
+      syncLock.value = null
+    })
+    return
+  }
   try {
     const parsed = JSON.parse(text)
     syncLock.value = 'editor'
@@ -107,17 +116,30 @@ function example() {
   editorText.value = JSON.stringify(SAMPLE_JSON, null, indentSize.value)
 }
 
-/** Escape the entire JSON text as a JSON string literal (adds outer quotes, escapes inner ones). */
-function escapeString() {
-  editorText.value = JSON.stringify(editorText.value)
+/** Add backslashes to escape characters in the JSON string. */
+function addBackslash() {
+  editorText.value = editorText.value
+    .replace(/\\/g, '\\\\') // Escape existing backslashes first
+    .replace(/"/g, '\\"') // Escape double quotes
+}
+function removeBackslash() {
+  editorText.value = editorText.value
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
 }
 
-/** Replace non-ASCII characters with \uXXXX escape sequences. */
-function escapeUnicode() {
-  editorText.value = editorText.value.replace(
-    /[\u0080-\uFFFF]/g,
-    (ch) => '\\u' + ch.charCodeAt(0).toString(16).padStart(4, '0'),
-  )
+/** Convert Chinese characters to Unicode escape sequences. */
+function chinese2Unicode() {
+  editorText.value = editorText.value.replace(/[\u4e00-\u9fa5]/g, (char) => {
+    return '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0')
+  })
+}
+
+/** Convert Unicode escape sequences back to Chinese characters. */
+function unicode2Chinese() {
+  editorText.value = editorText.value.replace(/\\u([\dA-Fa-f]{4})/g, (match, group) => {
+    return String.fromCharCode(parseInt(group, 16))
+  })
 }
 
 function expandAll() {
@@ -176,16 +198,31 @@ onMounted(() => {
             {{ t('tool.jsonFormat.btnExample') }}
           </el-button>
           <el-divider direction="vertical" />
-          <el-button size="small" plain @click="escapeString">
-            {{ t('tool.jsonFormat.btnEscape') }}
-          </el-button>
-          <el-button size="small" plain @click="escapeUnicode">
-            {{ t('tool.jsonFormat.btnUnicodeEscape') }}
-          </el-button>
+          <el-dropdown trigger="click">
+            <el-button size="small" plain>
+              {{ t('tool.jsonFormat.btnUnicodeEscape') }}<el-icon class="el-icon--right"><arrow-down /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="chinese2Unicode">{{ t('tool.jsonFormat.chinese2Unicode') }}</el-dropdown-item>
+                <el-dropdown-item @click="unicode2Chinese">{{ t('tool.jsonFormat.unicode2Chinese') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-dropdown trigger="click">
+            <el-button size="small" plain>
+              {{ t('tool.jsonFormat.btnEscape') }}<el-icon class="el-icon--right"><arrow-down /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="addBackslash">{{ t('tool.jsonFormat.addBackslash') }}</el-dropdown-item>
+                <el-dropdown-item @click="removeBackslash">{{ t('tool.jsonFormat.removeBackslash') }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
         <div class="editor-wrapper">
           <Codemirror v-model="editorText" :extensions="extensions" style="flex: 1; min-height: 0; overflow: hidden" />
-          <div v-if="jsonError" class="error-hint">{{ jsonError }}</div>
         </div>
       </div>
 
@@ -207,7 +244,9 @@ onMounted(() => {
             style="width: 80px" />
         </div>
         <div class="tree-wrapper" :class="{ 'jse-theme-dark': settingsStore.isDark }">
-          <JsonEditorVue ref="jsonEditorRef" v-model="jsonValue" :main-menu-bar="false" :navigation-bar="true"
+          <div v-if="jsonValue === null" class="flex h-16 items-center justify-center text-gray-500">请在左侧输入JSON代码</div>
+          <div v-else-if="jsonError" class="error-hint">{{ jsonError }}</div>
+          <JsonEditorVue v-else ref="jsonEditorRef" v-model="jsonValue" :main-menu-bar="false" :navigation-bar="true"
             style="height: 100%" />
         </div>
       </div>
@@ -292,7 +331,7 @@ onMounted(() => {
 .error-hint {
   flex-shrink: 0;
   color: var(--el-color-danger);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
   padding: 4px 8px;
   background: var(--el-color-danger-light-9);
@@ -303,6 +342,7 @@ onMounted(() => {
   flex: 1;
   overflow: hidden;
   min-height: 0;
+  background-color: var(--el-bg-color);
 
   :deep(.jse-main) {
     height: 100%;
