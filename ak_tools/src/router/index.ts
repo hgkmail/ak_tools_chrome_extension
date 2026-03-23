@@ -4,6 +4,7 @@ import HomePage from '@/views/HomePage.vue'
 import ToolPlaceholder from '@/views/ToolPlaceholder.vue'
 import JsonFormatTool from '@/views/json/JsonFormatTool.vue'
 import JsonEscapeTool from '@/views/json/JsonEscapeTool.vue'
+import JsonToEntityTool from '@/views/json/JsonToEntityTool.vue'
 
 const router = createRouter({
   history: createMemoryHistory(import.meta.env.BASE_URL),
@@ -44,7 +45,7 @@ const router = createRouter({
         {
           path: 'json/entity',
           name: 'jsonEntity',
-          component: ToolPlaceholder,
+          component: JsonToEntityTool,
           meta: {
             title: 'JSON 生成实体类',
             toolKey: 'jsonEntity',
