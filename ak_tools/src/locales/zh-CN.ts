@@ -45,6 +45,7 @@ export default {
       btnCompress: '压缩',
       btnExample: '示例',
       btnEscape: '字符串转义',
+      btnCompressAndEscape: '压缩并转义',
       addBackslash: '添加 \\ 转义',
       removeBackslash: '去除 \\ 转义',
       btnUnicodeEscape: 'Unicode 转义',
@@ -79,5 +80,10 @@ export default {
   },
   breadcrumb: {
     home: '首页',
+  },
+  common: {
+    btnCopy: '复制',
+    copySuccess: '已复制到剪贴板',
+    copyFailed: '复制失败',
   },
 }

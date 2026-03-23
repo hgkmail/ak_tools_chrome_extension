@@ -45,6 +45,7 @@ export default {
       btnCompress: 'Compress',
       btnExample: 'Example',
       btnEscape: 'String Escape',
+      btnCompressAndEscape: 'Compress & Escape',
       addBackslash: 'Add Backslashes',
       removeBackslash: 'Remove Backslashes',
       btnUnicodeEscape: 'Unicode Escape',
@@ -79,5 +80,10 @@ export default {
   },
   breadcrumb: {
     home: 'Home',
+  },
+  common: {
+    btnCopy: 'Copy',
+    copySuccess: 'Copied to clipboard',
+    copyFailed: 'Copy failed',
   },
 }

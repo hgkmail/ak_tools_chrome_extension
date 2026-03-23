@@ -7,11 +7,14 @@ import 'vanilla-jsoneditor/themes/jse-theme-dark.css'
 import { useI18n } from 'vue-i18n'
 import { useToolsStore } from '@/stores/tools'
 import { useSettingsStore } from '@/stores/settings'
+import { useClipboard } from '@/hooks/useClipboard'
+import { strAddBackslash, strRemoveBackslash } from '@/hooks/useString'
 
 const { t } = useI18n()
 const route = useRoute()
 const toolsStore = useToolsStore()
 const settingsStore = useSettingsStore()
+const { copyText } = useClipboard()
 
 const SAMPLE_JSON = {
   name: 'AK Tools',
@@ -118,14 +121,10 @@ function example() {
 
 /** Add backslashes to escape characters in the JSON string. */
 function addBackslash() {
-  editorText.value = editorText.value
-    .replace(/\\/g, '\\\\') // Escape existing backslashes first
-    .replace(/"/g, '\\"') // Escape double quotes
+  editorText.value = strAddBackslash(editorText.value)
 }
 function removeBackslash() {
-  editorText.value = editorText.value
-    .replace(/\\"/g, '"')
-    .replace(/\\\\/g, '\\')
+  editorText.value = strRemoveBackslash(editorText.value)
 }
 
 /** Convert Chinese characters to Unicode escape sequences. */
@@ -180,6 +179,15 @@ onMounted(() => {
   const toolKey = route.meta?.toolKey as string | undefined
   if (toolKey) toolsStore.recordUsage(toolKey)
 })
+
+function clickCopy() {
+  copyText(editorText.value)
+  ElNotification({
+    title: t('common.btnCopy'),
+    message: t('common.copySuccess'),
+    type: 'success',
+  })
+}
 </script>
 
 <template>
@@ -196,6 +204,9 @@ onMounted(() => {
           </el-button>
           <el-button size="small" plain @click="example">
             {{ t('tool.jsonFormat.btnExample') }}
+          </el-button>
+          <el-button size="small" plain type="success" @click="clickCopy">
+            {{ t('common.btnCopy') }}
           </el-button>
           <el-divider direction="vertical" />
           <el-dropdown trigger="click">
