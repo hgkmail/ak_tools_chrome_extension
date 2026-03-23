@@ -173,6 +173,53 @@ function convertDateToTs() {
   }
 }
 
+// ─── Batch: Timestamp → Date ────────────────────────────────────────────────
+interface BatchRow {
+  input: string
+  output: string
+}
+
+const batchTsInput = ref('')
+const batchTsUnit = ref<TimestampUnit>('ms')
+const batchTsTimezone = ref(systemTimezone)
+const batchTsResults = ref<BatchRow[]>([])
+
+function convertBatchTsToDate() {
+  const lines = batchTsInput.value.split('\n').map((l) => l.trim()).filter(Boolean)
+  batchTsResults.value = lines.map((line) => {
+    const num = Number(line)
+    if (!Number.isFinite(num) || num < 0) return { input: line, output: t('tool.dateTimestamp.errorInvalidTs') }
+    const ms = batchTsUnit.value === 's' ? num * 1000 : num
+    try {
+      return { input: line, output: formatWithTz(ms, batchTsTimezone.value) }
+    } catch {
+      return { input: line, output: t('tool.dateTimestamp.errorInvalidTs') }
+    }
+  })
+}
+
+// ─── Batch: Date → Timestamp ─────────────────────────────────────────────────
+const batchDtInput = ref('')
+const batchDtUnit = ref<TimestampUnit>('s')
+const batchDtTimezone = ref(systemTimezone)
+const batchDtResults = ref<BatchRow[]>([])
+
+function convertBatchDateToTs() {
+  const lines = batchDtInput.value.split('\n').map((l) => l.trim()).filter(Boolean)
+  batchDtResults.value = lines.map((line) => {
+    try {
+      const naiveMs = Date.parse(line.replace(' ', 'T') + 'Z')
+      if (!Number.isFinite(naiveMs)) throw new Error('invalid')
+      const formatted = formatWithTz(naiveMs, batchDtTimezone.value)
+      const formattedMs = Date.parse(formatted.replace(' ', 'T') + 'Z')
+      const utcMs = naiveMs + (naiveMs - formattedMs)
+      return { input: line, output: String(batchDtUnit.value === 's' ? Math.floor(utcMs / 1000) : utcMs) }
+    } catch {
+      return { input: line, output: t('tool.dateTimestamp.errorInvalidDate') }
+    }
+  })
+}
+
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 const activeTab = ref<'single' | 'batch'>('single')
 
@@ -281,17 +328,82 @@ onUnmounted(() => {
           </div>
         </el-tab-pane>
 
-        <!-- Batch conversion tab (placeholder) -->
+        <!-- Batch conversion tab -->
         <el-tab-pane :label="t('tool.dateTimestamp.tabBatch')" name="batch">
-          <div class="wip-placeholder">
-            <el-icon class="wip-icon">
-              <Clock />
-            </el-icon>
-            <p class="wip-text">{{ t('tool.wip') }}</p>
-            <p class="wip-desc">{{ t('tool.wipDesc') }}</p>
+          <!-- Batch Timestamp → DateTime -->
+          <div class="conv-section">
+            <div class="conv-section-title">
+              <el-icon>
+                <Clock />
+              </el-icon>
+              {{ t('tool.dateTimestamp.batchTsToDate') }}
+            </div>
+            <div class="batch-label">{{ t('tool.dateTimestamp.labelTimestampList') }}</div>
+            <el-input v-model="batchTsInput" type="textarea" :rows="4"
+              :placeholder="t('tool.dateTimestamp.placeholderBatchTs')" />
+            <el-button class="batch-btn" type="primary" @click="convertBatchTsToDate">
+              {{ t('tool.dateTimestamp.btnConvert') }}
+            </el-button>
+            <div class="batch-options">
+              <span class="batch-options-label">{{ t('tool.dateTimestamp.labelTimezone') }}</span>
+              <div class="batch-options-row">
+                <el-select v-model="batchTsTimezone" style="flex: 1">
+                  <el-option v-for="tz in TIMEZONE_LIST" :key="tz" :value="tz" :label="tz" />
+                </el-select>
+                <el-select v-model="batchTsUnit" style="width: 150px">
+                  <el-option value="ms" :label="t('tool.dateTimestamp.unitSelectMs')" />
+                  <el-option value="s" :label="t('tool.dateTimestamp.unitSelectSecond')" />
+                </el-select>
+              </div>
+            </div>
+            <template v-if="batchTsResults.length">
+              <div class="batch-label">{{ t('tool.dateTimestamp.labelConvertResult') }}</div>
+              <el-table :data="batchTsResults" border class="batch-table">
+                <el-table-column prop="input" :label="t('tool.dateTimestamp.tableColInput')" />
+                <el-table-column prop="output" :label="t('tool.dateTimestamp.tableColOutput')" />
+              </el-table>
+            </template>
+          </div>
+
+          <!-- Batch DateTime → Timestamp -->
+          <div class="conv-section">
+            <div class="conv-section-title">
+              <el-icon>
+                <Calendar />
+              </el-icon>
+              {{ t('tool.dateTimestamp.batchDateToTs') }}
+            </div>
+            <div class="batch-label">{{ t('tool.dateTimestamp.labelDateList') }}</div>
+            <el-input v-model="batchDtInput" type="textarea" :rows="4"
+              :placeholder="t('tool.dateTimestamp.placeholderBatchDate')" />
+            <div class="batch-options">
+              <span class="batch-options-label">{{ t('tool.dateTimestamp.labelTimezone') }}</span>
+              <div class="batch-options-row">
+                <el-select v-model="batchDtTimezone" style="flex: 1">
+                  <el-option v-for="tz in TIMEZONE_LIST" :key="tz" :value="tz" :label="tz" />
+                </el-select>
+                <el-select v-model="batchDtUnit" style="width: 150px">
+                  <el-option value="s" :label="t('tool.dateTimestamp.unitSelectSecond')" />
+                  <el-option value="ms" :label="t('tool.dateTimestamp.unitSelectMs')" />
+                </el-select>
+              </div>
+            </div>
+            <el-button class="batch-btn" type="primary" @click="convertBatchDateToTs">
+              {{ t('tool.dateTimestamp.btnConvert') }}
+            </el-button>
+            <template v-if="batchDtResults.length">
+              <div class="batch-label">{{ t('tool.dateTimestamp.labelConvertResult') }}</div>
+              <el-table :data="batchDtResults" border class="batch-table">
+                <el-table-column prop="input" :label="t('tool.dateTimestamp.tableColInput')" />
+                <el-table-column prop="output" :label="t('tool.dateTimestamp.tableColOutput')" />
+              </el-table>
+            </template>
           </div>
         </el-tab-pane>
       </el-tabs>
+    </el-card>
+    <el-card class="section-card" shadow="never">
+      <UnixTimestampDoc />
     </el-card>
   </div>
 </template>
@@ -398,28 +510,36 @@ onUnmounted(() => {
   margin-top: 6px;
 }
 
-.wip-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 0;
-  color: var(--el-text-color-secondary);
-  gap: 8px;
+.batch-label {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  margin: 10px 0 6px;
+}
 
-  .wip-icon {
-    font-size: 48px;
-    color: var(--el-color-primary-light-5);
-  }
+.batch-btn {
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
 
-  .wip-text {
-    font-size: 16px;
-    font-weight: 600;
-  }
+.batch-options {
+  margin-top: 10px;
 
-  .wip-desc {
+  .batch-options-label {
     font-size: 13px;
-    color: var(--el-text-color-placeholder);
+    color: var(--el-text-color-regular);
+    display: block;
+    margin-bottom: 6px;
   }
+
+  .batch-options-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+}
+
+.batch-table {
+  margin-top: 6px;
+  width: 100%;
 }
 </style>
