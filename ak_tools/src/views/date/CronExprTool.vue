@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useToolsStore } from '@/stores/tools'
-import { calculateNextLinuxCronRuns, getLinuxCronFields } from '@/hooks/cronUtils'
+import {
+  calculateNextLinuxCronRuns,
+  calculateNextQuartzCronRuns,
+  calculateNextSpringCronRuns,
+  getLinuxCronFields,
+  getQuartzCronFields,
+  getSpringCronFields,
+  type CronValidationErrorCode,
+} from '@/hooks/cronUtils'
 
 type CronType = 'linux' | 'spring' | 'quartz'
 
@@ -16,6 +24,30 @@ const explanationText = ref('')
 const nextRunTimes = ref<string[]>([])
 const resultError = ref('')
 
+const typeFieldCountMap: Record<CronType, string | number> = {
+  linux: 5,
+  spring: 6,
+  quartz: t('tool.dateCron.quartzFieldCountLabel'),
+}
+
+const placeholderExpression = computed(() => {
+  if (selectedType.value === 'spring') return t('tool.dateCron.placeholderExpressionSpring')
+  if (selectedType.value === 'quartz') return t('tool.dateCron.placeholderExpressionQuartz')
+  return t('tool.dateCron.placeholderExpressionLinux')
+})
+
+const typeHint = computed(() => {
+  if (selectedType.value === 'spring') return t('tool.dateCron.springHint')
+  if (selectedType.value === 'quartz') return t('tool.dateCron.quartzHint')
+  return t('tool.dateCron.linuxHint')
+})
+
+const syntaxHint = computed(() => {
+  if (selectedType.value === 'spring') return t('tool.dateCron.springSyntaxHint')
+  if (selectedType.value === 'quartz') return t('tool.dateCron.quartzSyntaxHint')
+  return t('tool.dateCron.linuxSyntaxHint')
+})
+
 function buildLinuxExplanation(expression: string): string {
   const fields = getLinuxCronFields(expression)
 
@@ -28,11 +60,67 @@ function buildLinuxExplanation(expression: string): string {
   ].join('，')
 }
 
-function getErrorMessage(errorCode: 'empty' | 'preset' | 'fieldCount' | 'parse', errorDetail?: string): string {
+function buildSpringExplanation(expression: string): string {
+  const fields = getSpringCronFields(expression)
+
+  return [
+    `${t('tool.dateCron.fieldSecond')}: ${fields.second}`,
+    `${t('tool.dateCron.fieldMinute')}: ${fields.minute}`,
+    `${t('tool.dateCron.fieldHour')}: ${fields.hour}`,
+    `${t('tool.dateCron.fieldDayOfMonth')}: ${fields.dayOfMonth}`,
+    `${t('tool.dateCron.fieldMonth')}: ${fields.month}`,
+    `${t('tool.dateCron.fieldDayOfWeek')}: ${fields.dayOfWeek}`,
+  ].join('，')
+}
+
+function buildQuartzExplanation(expression: string): string {
+  const fields = getQuartzCronFields(expression)
+
+  return [
+    `${t('tool.dateCron.fieldSecond')}: ${fields.second}`,
+    `${t('tool.dateCron.fieldMinute')}: ${fields.minute}`,
+    `${t('tool.dateCron.fieldHour')}: ${fields.hour}`,
+    `${t('tool.dateCron.fieldDayOfMonth')}: ${fields.dayOfMonth}`,
+    `${t('tool.dateCron.fieldMonth')}: ${fields.month}`,
+    `${t('tool.dateCron.fieldDayOfWeek')}: ${fields.dayOfWeek}`,
+    `${t('tool.dateCron.fieldYear')}: ${fields.year}`,
+  ].join('，')
+}
+
+function getTypeLabel(type: CronType): string {
+  if (type === 'spring') return t('tool.dateCron.typeSpring')
+  if (type === 'quartz') return t('tool.dateCron.typeQuartz')
+  return t('tool.dateCron.typeLinux')
+}
+
+function getErrorMessage(errorCode: CronValidationErrorCode, errorDetail?: string): string {
   if (errorCode === 'empty') return t('tool.dateCron.errorEmpty')
   if (errorCode === 'preset') return t('tool.dateCron.errorPresetUnsupported')
-  if (errorCode === 'fieldCount') return t('tool.dateCron.errorFieldCount')
+  if (errorCode === 'fieldCount') {
+    return t('tool.dateCron.errorFieldCount', {
+      type: getTypeLabel(selectedType.value),
+      count: typeFieldCountMap[selectedType.value],
+    })
+  }
   return t('tool.dateCron.errorInvalidExpression', { detail: errorDetail ?? '' })
+}
+
+function getExplanationBuilder(type: CronType): (expression: string) => string {
+  if (type === 'spring') return buildSpringExplanation
+  if (type === 'quartz') return buildQuartzExplanation
+  return buildLinuxExplanation
+}
+
+function calculateByType() {
+  if (selectedType.value === 'spring') {
+    return calculateNextSpringCronRuns(cronExpression.value, { count: 7 })
+  }
+
+  if (selectedType.value === 'quartz') {
+    return calculateNextQuartzCronRuns(cronExpression.value, { count: 7 })
+  }
+
+  return calculateNextLinuxCronRuns(cronExpression.value, { count: 7 })
 }
 
 function handleCalculate() {
@@ -41,12 +129,7 @@ function handleCalculate() {
   normalizedExpression.value = ''
   explanationText.value = ''
 
-  if (selectedType.value !== 'linux') {
-    resultError.value = t('tool.dateCron.typeNotImplemented')
-    return
-  }
-
-  const result = calculateNextLinuxCronRuns(cronExpression.value, { count: 7 })
+  const result = calculateByType()
 
   if (!result.ok) {
     resultError.value = getErrorMessage(result.errorCode, result.errorDetail)
@@ -54,7 +137,7 @@ function handleCalculate() {
   }
 
   normalizedExpression.value = result.normalizedExpression
-  explanationText.value = buildLinuxExplanation(result.normalizedExpression)
+  explanationText.value = getExplanationBuilder(selectedType.value)(result.normalizedExpression)
   nextRunTimes.value = result.nextRunTimes
 }
 
@@ -72,15 +155,15 @@ onMounted(() => {
         <div class="field-label">{{ t('tool.dateCron.labelType') }}</div>
         <el-radio-group v-model="selectedType">
           <el-radio value="linux">{{ t('tool.dateCron.typeLinux') }}</el-radio>
-          <el-radio value="spring" disabled>{{ t('tool.dateCron.typeSpring') }}</el-radio>
-          <el-radio value="quartz" disabled>{{ t('tool.dateCron.typeQuartz') }}</el-radio>
+          <el-radio value="spring">{{ t('tool.dateCron.typeSpring') }}</el-radio>
+          <el-radio value="quartz">{{ t('tool.dateCron.typeQuartz') }}</el-radio>
         </el-radio-group>
       </div>
 
       <div class="form-row form-row-input">
         <div class="field-label">{{ t('tool.dateCron.labelExpression') }}</div>
         <div class="expression-row">
-          <el-input v-model="cronExpression" :placeholder="t('tool.dateCron.placeholderExpression')" clearable
+          <el-input v-model="cronExpression" :placeholder="placeholderExpression" clearable
             @keydown.enter.prevent="handleCalculate" />
           <el-button type="primary" @click="handleCalculate">
             {{ t('tool.dateCron.btnCalculate') }}
@@ -88,9 +171,9 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="helper-text">{{ t('tool.dateCron.linuxOnlyHint') }}</div>
+      <div class="helper-text">{{ typeHint }}</div>
       <div class="helper-text">{{ t('tool.dateCron.commentHint') }}</div>
-      <div class="helper-text helper-text-muted">{{ t('tool.dateCron.typeNotImplemented') }}</div>
+      <div class="helper-text helper-text-muted">{{ syntaxHint }}</div>
 
       <div class="examples">
         <div class="example-item">
@@ -114,6 +197,7 @@ onMounted(() => {
           <span class="example-label">{{ t('tool.dateCron.exampleQuartzLabel') }}</span>
           <span class="example-code">
             <span class="example-required">0 0 18 L * ?</span>
+            <span class="example-optional"> [2026]</span>
           </span>
           <span class="example-note">{{ t('tool.dateCron.exampleQuartzNote') }}</span>
         </div>
@@ -139,6 +223,65 @@ onMounted(() => {
       </div>
 
       <div v-else class="empty-text">{{ t('tool.dateCron.placeholderResult') }}</div>
+    </el-card>
+
+    <el-card class="section-card" shadow="never">
+      <pre v-if="selectedType === 'linux'"><code>例子：
+    # 每月的最后1天
+    0 0 L * *
+
+    说明：
+    Linux
+    *    *    *    *    *
+    -    -    -    -    -
+    |    |    |    |    |
+    |    |    |    |    +----- day of week (0 - 7) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+    |    |    |    +---------- month (1 - 12) OR jan,feb,mar,apr ...
+    |    |    +--------------- day of month (1 - 31)
+    |    +-------------------- hour (0 - 23)
+    +------------------------- minute (0 - 59)</code></pre>
+      <pre v-if="selectedType === 'spring'"><code>例子：
+    # 每月的最后1天
+    @Scheduled(cron = "0 0 18 28-31 * ?")
+    public void doAtLastDayOfMonth() {
+        final Calendar calendar = Calendar.getInstance();
+        if (c.get(Calendar.DATE) == c.getActualMaximum(Calendar.DATE)) {
+            // do something here...
+        }
+    }
+
+    说明：
+    Java(Spring)
+    *    *    *    *    *    *
+    -    -    -    -    -    -
+    |    |    |    |    |    |
+    |    |    |    |    |    +----- day of week (0 - 7) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+    |    |    |    |    +---------- month (1 - 12) OR jan,feb,mar,apr ...
+    |    |    |    +--------------- day of month (1 - 31)
+    |    |    +-------------------- hour (0 - 23)
+    |    +------------------------- min (0 - 59)
+    +------------------------------ second (0 - 59)</code></pre>
+      <pre v-if="selectedType === 'quartz'"><code>例子：
+    # 每月的最后1天
+    @Scheduled(cron = "0 0 18 L * ?")
+    public void doAtLastDayOfMonth() {
+        // do something here...
+    }
+
+    说明：
+    Java(Quartz)
+    *    *    *    *    *    *    *
+    -    -    -    -    -    -    -
+    |    |    |    |    |    |    |
+    |    |    |    |    |    |    + year [optional]
+    |    |    |    |    |    +----- day of week (1 - 7) sun,mon,tue,wed,thu,fri,sat
+    |    |    |    |    +---------- month (1 - 12) OR jan,feb,mar,apr ...
+    |    |    |    +--------------- day of month (1 - 31)
+    |    |    +-------------------- hour (0 - 23)
+    |    +------------------------- min (0 - 59)
+    +------------------------------ second (0 - 59)</code></pre>
+
+      <CronExprToolDoc />
     </el-card>
   </div>
 </template>
@@ -291,5 +434,29 @@ onMounted(() => {
     width: auto;
     line-height: 1.4;
   }
+}
+
+pre {
+  display: block;
+  padding: 10px;
+  margin: 0 0 10.5px;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-all;
+  word-wrap: break-word;
+  color: var(--el-text-color-regular);
+  background-color: var(--el-fill-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: 2px;
+}
+
+pre code {
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  white-space: pre-wrap;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
 }
 </style>

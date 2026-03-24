@@ -113,41 +113,94 @@ export default {
     },
     dateCron: {
       name: 'Cron Expression',
-      desc: 'Calculate the next 7 execution times for Linux cron expressions',
+      desc: 'Calculate the next 7 execution times for Linux, Java(Spring), and Java(Quartz) cron expressions',
       pageTitle: 'Crontab Execution Time Calculator',
       labelType: 'Type:',
       typeLinux: 'Linux',
       typeSpring: 'Java(Spring)',
       typeQuartz: 'Java(Quartz)',
-      typeNotImplemented: 'Only Linux 5-field cron expressions are implemented right now.',
       labelExpression: 'CRON Expression:',
-      placeholderExpression: 'Enter a Linux 5-field cron expression',
+      placeholderExpressionLinux: 'Enter a Linux 5-field cron expression',
+      placeholderExpressionSpring: 'Enter a Java(Spring) 6-field cron expression',
+      placeholderExpressionQuartz: 'Enter a Java(Quartz) 6- or 7-field cron expression',
       btnCalculate: 'View Execution Times',
-      linuxOnlyHint:
-        'A CRON expression is a string with 5 space-separated fields that describes when a job should run.',
-      commentHint:
-        'Comments start with # and must be on their own line. This page only supports Linux 5-field expressions, not comment lines or predefined expressions.',
+      linuxHint:
+        'A Linux cron expression has 5 space-separated fields: Minutes, Hours, Day of month, Month, Day of week.',
+      springHint:
+        'A Java(Spring) cron expression has 6 space-separated fields: Seconds, Minutes, Hours, Day of month, Month, Day of week.',
+      quartzHint:
+        'A Java(Quartz) cron expression supports 6 or 7 space-separated fields. The first 6 fields are Seconds, Minutes, Hours, Day of month, Month, Day of week, and the 7th Year field is optional. When omitted, the current year is used.',
+      commentHint: 'Comments start with # and must be on their own line.',
+      linuxSyntaxHint:
+        'Common Linux syntax supports numbers, *, ranges (-), lists (,), and steps (/).',
+      springSyntaxHint:
+        'Common Spring syntax supports numbers, *, ?, ranges (-), lists (,), and steps (/).',
+      quartzSyntaxHint:
+        'Common Quartz syntax supports numbers, *, ?, L, W, #, ranges (-), lists (,), and steps (/).',
       exampleLinuxLabel: 'Linux:',
       exampleLinuxNote: 'Only enter the red part.',
       exampleSpringLabel: 'Java(Spring):',
-      exampleSpringNote: 'Not implemented in this version.',
+      exampleSpringNote: 'Use the 6-field expression only.',
       exampleQuartzLabel: 'Java(Quartz):',
-      exampleQuartzNote: 'Not implemented in this version.',
+      exampleQuartzNote: 'Year is optional. When omitted, the current year is used.',
       sectionExplain: 'Crontab Expression Explanation',
       sectionNextRuns: 'Next 7 Execution Times:',
       placeholderExplain:
-        'After you calculate a valid Linux cron expression, field details will appear here.',
+        'After you calculate a valid cron expression, field details will appear here.',
       placeholderResult: 'Click “View Execution Times” to see the result here.',
+      fieldSecond: 'Second',
       fieldMinute: 'Minute',
       fieldHour: 'Hour',
       fieldDayOfMonth: 'Day of month',
       fieldMonth: 'Month',
       fieldDayOfWeek: 'Day of week',
+      fieldYear: 'Year',
+      quartzFieldCountLabel: '6 or 7',
       errorEmpty: 'Please enter a cron expression.',
       errorPresetUnsupported:
-        'Predefined expressions such as @daily are not supported. Please enter a Linux 5-field cron expression.',
-      errorFieldCount: 'A Linux cron expression must contain exactly 5 fields.',
+        'Predefined expressions such as @daily are not supported. Please enter a full cron expression.',
+      errorFieldCount: 'A {type} expression must contain exactly {count} fields.',
       errorInvalidExpression: 'Invalid cron expression: {detail}',
+      doc: {
+        colField: 'Field',
+        colRequired: 'Required',
+        colAllowedValues: 'Allowed Values',
+        colSpecialChars: 'Special Chars',
+        colNotes: 'Notes',
+        yes: 'Yes',
+        no: 'No',
+        fieldSeconds: 'Seconds',
+        fieldMinutes: 'Minutes',
+        fieldHours: 'Hours',
+        fieldDayOfMonth: 'Day of month',
+        fieldMonth: 'Month',
+        fieldDayOfWeek: 'Day of week',
+        fieldYear: 'Year',
+        rangeOr: 'or',
+        noteStandardUnsupported: 'Non-standard; not supported by most implementations.',
+        noteDayOfMonthSpecial: '? L W — supported only in some software',
+        noteDayOfWeekLine1: '? L # — supported only in some software',
+        noteDayOfWeekLine2: 'Linux & Spring: 0–7 (0 and 7 both equal Sunday)',
+        noteDayOfWeekLine3: 'Quartz: 1–7 (1 = Sunday)',
+        sectionStandard: 'Standard Fields',
+        sectionNonStandard: 'Non-Standard Fields',
+        commaDesc:
+          'The comma separates items in a list. For example, using <code>MON,WED,FRI</code> in the day-of-week field specifies Monday, Wednesday, and Friday.',
+        hyphenDesc:
+          'The hyphen defines a range. For example, <code>2000-2010</code> covers every year from 2000 to 2010, inclusive.',
+        percentDesc:
+          'Unless escaped with a backslash (<code>\\</code>), a percent sign (<code>%</code>) in the command string is replaced by a newline, and all data after the first <code>%</code> is sent to the command as standard input.',
+        lDesc:
+          '"L" stands for "Last". In the day-of-week field it can specify a construct like "the last Friday of the month" (<code>5L</code>). In the day-of-month field it specifies the last day of the month.',
+        wDesc:
+          'The day-of-month field accepts the "W" character to indicate the nearest weekday (Mon–Fri) to a given date. For example, <code>15W</code> means "the nearest weekday to the 15th." If the 15th falls on Saturday, the trigger fires on Friday the 14th; if on Sunday, on Monday the 16th; if on a weekday, that same day. "<code>1W</code>" will not cross into the previous month — if the 1st is Saturday, the trigger fires on Monday the 3rd. "W" can only be used when a single day is specified (not a range or list).',
+        hashDesc:
+          'The "<code>#</code>" sign can be used in the day-of-week field, followed by a digit from 1 to 5. For example, <code>5#3</code> means the third Friday of every month.',
+        questionDesc:
+          'In some implementations, "<code>?</code>" is used instead of "<code>*</code>" to leave the day-of-month or day-of-week field unspecified. Other cron implementations substitute "<code>?</code>" with the cron daemon\'s start time — for example, <code>? ? * * * *</code> would become <code>25 8 * * *</code> if cron started at 8:25 AM, running daily at that time until restarted.',
+        minuteStepDesc:
+          'Setting <code>*/5</code> in the minute field means every 5 minutes — specifically, every minute divisible by 5.',
+      },
     },
     formatHtml: { name: 'HTML Formatter', desc: 'Beautify and format HTML code' },
     formatJs: { name: 'JavaScript Formatter', desc: 'Beautify and format JavaScript code' },

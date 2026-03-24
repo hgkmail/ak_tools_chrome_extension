@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useLocalStorage, usePreferredDark } from '@vueuse/core'
 
 export type Theme = 'light' | 'dark' | 'system'
