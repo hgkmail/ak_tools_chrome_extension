@@ -1,16 +1,13 @@
 {
-  "name": "AK Tools Extension",
-  "description": "A chrome extension contains some useful developer tools",
-  "version": "0.0.1",
+  "name": "Json Tools Extension",
+  "description": "A chrome extension contains some useful developer tools, such as json editor, sql formatter, cron expression parser, etc.",
+  "version": "1.0.0",
   "manifest_version": 3,
   "action": {
     "default_title": "Click to open tools"
   },
   "permissions": [
     "storage"
-  ],
-  "host_permissions": [
-    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"
