@@ -6,6 +6,7 @@ import JsonFormatTool from '@/views/json/JsonFormatTool.vue'
 import JsonEscapeTool from '@/views/json/JsonEscapeTool.vue'
 import JsonToEntityTool from '@/views/json/JsonToEntityTool.vue'
 import UnixTimestampTool from '@/views/date/UnixTimestampTool.vue'
+import CronExprTool from '@/views/date/CronExprTool.vue'
 
 const router = createRouter({
   history: createMemoryHistory(import.meta.env.BASE_URL),
@@ -69,7 +70,7 @@ const router = createRouter({
         {
           path: 'date/cron',
           name: 'dateCron',
-          component: ToolPlaceholder,
+          component: CronExprTool,
           meta: {
             title: 'Cron 表达式',
             toolKey: 'dateCron',

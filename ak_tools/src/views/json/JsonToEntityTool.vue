@@ -249,6 +249,7 @@ onMounted(() => {
   overflow: hidden;
   min-width: 0;
   flex-shrink: 0;
+  background-color: var(--el-bg-color);
 }
 
 .right-panel {
@@ -257,6 +258,7 @@ onMounted(() => {
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  background-color: var(--el-bg-color);
 }
 
 .panel-toolbar {

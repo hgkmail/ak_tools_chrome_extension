@@ -106,8 +106,8 @@ function formatWithTz(ms: number, timeZone: string): string {
 }
 
 // ─── Timestamp → Date ─────────────────────────────────────────────────────────
-const tsInput = ref(String(Date.now()))
-const tsUnit = ref<TimestampUnit>('ms')
+const tsInput = ref(String(Math.floor(Date.now() / 1000)))
+const tsUnit = ref<TimestampUnit>('s')
 const tsTimezone = ref(systemTimezone)
 const tsResult = ref('')
 const tsError = ref('')
@@ -180,7 +180,7 @@ interface BatchRow {
 }
 
 const batchTsInput = ref('')
-const batchTsUnit = ref<TimestampUnit>('ms')
+const batchTsUnit = ref<TimestampUnit>('s')
 const batchTsTimezone = ref(systemTimezone)
 const batchTsResults = ref<BatchRow[]>([])
 
