@@ -1,13 +1,15 @@
 import { createRouter, createMemoryHistory } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import HomePage from '@/views/HomePage.vue'
-import ToolPlaceholder from '@/views/ToolPlaceholder.vue'
 import JsonFormatTool from '@/views/json/JsonFormatTool.vue'
 import JsonEscapeTool from '@/views/json/JsonEscapeTool.vue'
 import JsonToEntityTool from '@/views/json/JsonToEntityTool.vue'
 import UnixTimestampTool from '@/views/date/UnixTimestampTool.vue'
 import CronExprTool from '@/views/date/CronExprTool.vue'
 import HtmlFormatTool from '@/views/format/HtmlFormatTool.vue'
+import JavaScriptFormatTool from '@/views/format/JavaScriptFormatTool.vue'
+import CssFormatTool from '@/views/format/CssFormatTool.vue'
+import SqlFormatTool from '@/views/format/SqlFormatTool.vue'
 
 const router = createRouter({
   history: createMemoryHistory(import.meta.env.BASE_URL),
@@ -94,7 +96,7 @@ const router = createRouter({
         {
           path: 'format/javascript',
           name: 'formatJs',
-          component: ToolPlaceholder,
+          component: JavaScriptFormatTool,
           meta: {
             title: 'JavaScript 格式化',
             toolKey: 'formatJs',
@@ -105,7 +107,7 @@ const router = createRouter({
         {
           path: 'format/css',
           name: 'formatCss',
-          component: ToolPlaceholder,
+          component: CssFormatTool,
           meta: {
             title: 'CSS 格式化',
             toolKey: 'formatCss',
@@ -116,7 +118,7 @@ const router = createRouter({
         {
           path: 'format/sql',
           name: 'formatSql',
-          component: ToolPlaceholder,
+          component: SqlFormatTool,
           meta: {
             title: 'SQL 格式化',
             toolKey: 'formatSql',
