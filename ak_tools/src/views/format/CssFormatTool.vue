@@ -176,6 +176,7 @@ onMounted(() => {
   flex-direction: column;
   min-height: 0;
   background-color: var(--el-bg-color);
+  font-size: 0.8rem;
 
   :deep(.cm-editor) {
     height: 100%;

@@ -44,11 +44,31 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        chunkFileNames: 'js/[name]-[hash].js', // 引入文件名的名称
+        entryFileNames: 'js/[name]-[hash].js', // 包的入口文件名称
+        assetFileNames: '[ext]/[name]-[hash].[ext]', // 资源文件像 字体，图片等
         manualChunks: {
           '@vueuse/core': ['@vueuse/core'],
           '@element-plus/icons-vue': ['@element-plus/icons-vue'],
           'vue-i18n': ['vue-i18n'],
           'fuse.js': ['fuse.js'],
+          codemirror: [
+            'codemirror',
+            '@codemirror/language',
+            '@codemirror/lang-javascript',
+            '@codemirror/lang-css',
+            '@codemirror/lang-html',
+            '@codemirror/lang-yaml',
+            '@codemirror/lang-java',
+            '@codemirror/lang-json',
+            '@codemirror/theme-one-dark',
+            'vue-codemirror',
+            'json-editor-vue',
+          ],
+          'highlight.js': ['highlight.js'],
+          'cron-parser': ['cron-parser'],
+          'sql-formatter': ['sql-formatter'],
+          'js-yaml': ['js-yaml'],
         },
       },
     },

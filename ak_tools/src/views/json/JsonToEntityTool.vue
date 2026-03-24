@@ -299,6 +299,7 @@ onMounted(() => {
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  font-size: 0.8rem;
 
   :deep(.cm-editor) {
     height: 100%;

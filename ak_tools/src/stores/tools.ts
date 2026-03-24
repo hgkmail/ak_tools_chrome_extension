@@ -102,7 +102,7 @@ export const useToolsStore = defineStore('tools', () => {
   function recordUsage(toolKey: string) {
     const list = recentlyUsed.value.filter((k) => k !== toolKey)
     list.unshift(toolKey)
-    recentlyUsed.value = list.slice(0, 8)
+    recentlyUsed.value = list.slice(0, 4)
   }
 
   const recentTools = computed(

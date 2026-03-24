@@ -38,7 +38,7 @@ const indentOptions = computed<IndentOption[]>(() => [
 ])
 
 const selectedIndentIndex = ref(0)
-const currentIndentOption = computed<JsBeautifyOptions>(() => indentOptions.value[selectedIndentIndex.value]?.value ?? indentOptions.value[0].value)
+const currentIndentOption = computed<JsBeautifyOptions>(() => indentOptions.value[selectedIndentIndex.value]?.value ?? { indent_with_tabs: true })
 
 const SAMPLE_HTML = `<html><head><title>JSON Tools</title></head><body></body></html>`
 
@@ -177,6 +177,7 @@ onMounted(() => {
   flex-direction: column;
   min-height: 0;
   background-color: var(--el-bg-color);
+  font-size: 0.8rem;
 
   :deep(.cm-editor) {
     height: 100%;
