@@ -1,6 +1,6 @@
 export default {
   app: {
-    name: 'AK Tools',
+    name: 'JSON 工具',
   },
   header: {
     login: '登录',

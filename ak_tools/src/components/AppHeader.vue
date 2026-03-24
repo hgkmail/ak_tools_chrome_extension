@@ -61,7 +61,8 @@ function goHome() {
 }
 
 .header-right {
-  display: flex;
+  // display: flex;
+  display: none;
   align-items: center;
   gap: 12px;
 }
