@@ -7,6 +7,7 @@ import JsonEscapeTool from '@/views/json/JsonEscapeTool.vue'
 import JsonToEntityTool from '@/views/json/JsonToEntityTool.vue'
 import UnixTimestampTool from '@/views/date/UnixTimestampTool.vue'
 import CronExprTool from '@/views/date/CronExprTool.vue'
+import HtmlFormatTool from '@/views/format/HtmlFormatTool.vue'
 
 const router = createRouter({
   history: createMemoryHistory(import.meta.env.BASE_URL),
@@ -82,7 +83,7 @@ const router = createRouter({
         {
           path: 'format/html',
           name: 'formatHtml',
-          component: ToolPlaceholder,
+          component: HtmlFormatTool,
           meta: {
             title: 'HTML 格式化',
             toolKey: 'formatHtml',
